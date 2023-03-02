@@ -16,6 +16,11 @@ Simple online invoice simulation is application for mocking online invoice where
   for example: INV-2023-03-0001  => the fist invoice in 2023 March
 
 
+## Test
+- dump `invoiceapp_design_update.sql`
+- adjust setting for database in .env
+- run `php artisan serve`
+
 
 ## License
 
