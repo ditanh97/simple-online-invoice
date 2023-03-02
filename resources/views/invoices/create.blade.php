@@ -21,8 +21,14 @@
                 </div>
                 <div class="col-xs-12 col-sm-12 col-md-12">
                     <div class="form-group">
-                        <label for="issue_date">Issue Date</label>
-                        <input type="date" class="form-control" name="issue_date">
+                        <label for="due_date">Due Date</label>
+                        <input type="date" class="form-control" name="due_date">
+                    </div>
+                </div>
+                <div class="col-xs-12 col-sm-12 col-md-12">
+                    <div class="form-group">
+                        <label for="subject">Subject</label>
+                        <input type="text" class="form-control" name="subject">
                     </div>
                 </div>
                 <div class="form-group" id="item-selection" style="display: none;">
@@ -59,18 +65,17 @@
                         </tbody>
                     </table>    
                 </div>
-                <div class="col-xs-12 col-sm-12 col-md-12">
+                <div id="invoice-price" style="display: none;">
                     <div class="form-group">
                         <label for="subtotal">Subtotal</label>
-                        <input readonly type="number" class="form-control" name="subtotal" value=0>
+                        <input readonly type="number" class="form-control" name="subtotal" id="subtotal" value=0>
                     </div>
-                </div>
-                <div class="col-xs-12 col-sm-12 col-md-12">
                     <div class="form-group">
                         <label for="tax">Tax</label>
-                        <input readonly type="number" class="form-control" name="tax" value=0>
+                        <input readonly type="number" class="form-control" name="tax" id="tax" value=0>
                     </div>
                 </div>
+
 
                 <button type="submit" class="btn btn-primary ml-3" id="add-invoice" style="display: none;">Create Invoice</button>
             </div>
@@ -80,7 +85,8 @@
     
     <script>
         $(document).ready(function() {
-            itemData = []
+            var itemList = []
+            var total = null;
 
 
             $('#user_id').on('change', function() {
@@ -95,7 +101,7 @@
                             console.log("halo rezpon", response);
                             // if (response.length > 0) {
                             //     $('#add-item').show();
-                            //     itemData = response;
+                            //     itemList = response;
                             // }
                             $('#item-selection').show();
                             $('#item').empty();
@@ -134,92 +140,100 @@
             });
                 // Ketika tombol "Add Item" ditekan
             $('#add-item').on('click', function(){
-                console.log("tesss")
+                $('#invoice-price').show();
                 $('#item-list').show();
                 var item_id = $('#item').val();
-                // Mengambil data item berdasarkan ID
-                $.ajax({
-                    url: '/api/item_detail/' + item_id,
-                    type: 'GET',
-                    dataType: 'json',
-                    success: function(response){
-                        console.log("response satu:", response.type)
-                        var html = '<tr>'+
-                                '<td><input readonly type="text" name="item_id[]" class="form-control item_id" value='+response.item_id+'></td>'+
-                                '<td><input readonly type="text" name="type[]" class="form-control type" value="'+response.type+'"></td>'+
-                                '<td><input readonly type="text" name="description[]" class="form-control description" value="'+response.description+'"></td>'+
-                                '<td><input readonly type="number" name="qty[]" class="form-control qty" value='+response.qty+'></td>'+
-                                '<td><input readonly type="number" name="qty_billed[]" min="1" class="form-control qty_billed" value='+response.qty+'></td>'+
-                                '<td><input readonly type="number" name="unit_price[]" class="form-control unit_price" value='+response.unit_price+'></td>'+
-                                '<td><input readonly type="number" name="total_price[]" class="form-control total_price" value='+response.amount+'></td>'+
-                                '<td><button type="button" class="btn btn-sm btn-danger remove_item">Hapus</button></td></tr>';
-                        $('#item-list-body').append(html);
-                    },
-                    error: function(xhr, status, error){
-                        var err = eval("(" + xhr.responseText + ")");
-                        alert(err.Message);
-                    }
-                });
-                // var opt  = itemData.reduce( (acc, obj) => {
-                //     return acc + '<option value=' +  obj.item_id +'>'+obj.item_id+'</option>'
-                // }, '')
-
-                // var html = '<tr>'+
-                //                 '<td><select name="item_id[]" class="form-control item_id"><option value="">Choose Item</option>'+opt +'</select></td>'+
-                //                 // '<td class="types"></td>'+
-                //                 '<td><input readonly type="text" name="type[]" class="form-control types"></td>'+
-                //                 '<td><input readonly type="text" name="description[]" class="form-control description"></td>'+
-                //                 '<td><input readonly type="number" name="qty[]" class="form-control qty"></td>'+
-                //                 '<td><input type="number" name="qty_billed[]" min="1" class="form-control qty_billed"></td>'+
-                //                 '<td><input readonly type="number" name="unit_price[]" class="form-control unit_price"></td>'+
-                //                 '<td><input type="number" name="total_price[]" class="form-control total_price"></td>'+
-                //                 '<td><button type="button" class="btn btn-sm btn-danger remove_item">Hapus</button></td></tr>';
-                // $('#item-list-body').append(html);
-
-                // // Ketika pilihan item berubah
-                // $('select.item_id').on('change', function(){
-                //     var item_id = $(this).val(); // Ambil value dari select item
-
-                //     // Mengambil data item berdasarkan ID
-                //     $.ajax({
-                //         url: '/api/item_detail/' + item_id,
-                //         type: 'GET',
-                //         dataType: 'json',
-                //         success: function(response){
-                //             console.log("response satu:", response.type)
-                //             $(this).closest('td').next().find('.types').val(response.type); 
-                //             console.log("heeii", $(this).closest('td').next().find('.types').val());
-                //             $(this).closest('tr').find('input.description').val(response.description);
-                //             $(this).closest('tr').find('input.qty').val(response.qty);
-                //             $(this).closest('tr').find('input.qty_billed').attr('max', response.qty); // Set value jumlah maksimum item
-                //             $(this).closest('tr').find('input.unit_price').val(response.unit_price);
-                //             $(this).closest('tr').find('input.total_price').attr('max', response.amount);
-                //         },
-                //         error: function(xhr, status, error){
-                //             var err = eval("(" + xhr.responseText + ")");
-                //             alert(err.Message);
-                //         }
-                //     });
-                // });
-                $('#add-invoice').show();
+                if(item_id) {
+                    // Mengambil data item berdasarkan ID
+                    $.ajax({
+                        url: '/api/item_detail/' + item_id,
+                        type: 'GET',
+                        dataType: 'json',
+                        success: function(response){
+                            console.log("response satu:", response.type)
+                            var item = {
+                                ...response,
+                                qty_billed: response.qty,
+                                total_price: response.amount
+                            };
+                            itemList.push(item);
+                            if (total == null) total = parseFloat(response.amount);
+                            var html = '<tr>'+
+                                    '<td><input readonly type="text" name="item_id[]" class="form-control item_id" value='+response.item_id+'></td>'+
+                                    '<td><input readonly type="text" name="type[]" class="form-control type" value="'+response.type+'"></td>'+
+                                    '<td><input readonly type="text" name="description[]" class="form-control description" value="'+response.description+'"></td>'+
+                                    '<td><input readonly type="number" name="qty[]" class="form-control qty" value='+response.qty+'></td>'+
+                                    '<td><input readonly type="number" name="qty_billed[]" min="1" class="form-control qty_billed" value='+response.qty+'></td>'+
+                                    '<td><input readonly type="number" name="unit_price[]" class="form-control unit_price" value='+response.unit_price+'></td>'+
+                                    '<td><input readonly type="number" name="total_price[]" class="form-control total_price" value='+response.amount+'></td>'+
+                                    '<td><button type="button" class="btn btn-sm btn-danger remove_item">Hapus</button></td></tr>';
+                            $('#item-list-body').append(html);
+                        },
+                        error: function(xhr, status, error){
+                            var err = eval("(" + xhr.responseText + ")");
+                            alert(err.Message);
+                        }
+                    });
+    
+                    updateSubTotalandTax();
+                    $('#add-invoice').show();
+                }
             });
 
-            function calculateTotalAndTax() {
-                
+            function updateSubTotalandTax() {
+                $('input[name="total_price[]"]').each(function() {
+                    var subtotal = parseInt($(this).val());
+                    total += subtotal;
+                });
+                tax = total * 0.10
+                $('#subtotal').val(total);
+                $('#tax').val(tax);
+            
             }
 
 
             // Ketika tombol "Hapus" di klik
             $(document).on('click', '.remove_item', function(){
-
+                var itemId = $(this).data('item_id');
+                itemList.splice(itemId - 1, 1);
                 $(this).closest('tr').remove();
+            });
 
+
+            $('tr').on('change', function()  {
+                // harus nya detect dulu remove baru berubah
+                updateSubTotalandTax();
+            })
+
+            $('form').submit(function(event) {
+                event.preventDefault();
+
+                var user_id = $('#user_id').val();
+                var due_date = $('#due_date').val();
+                var subject = $('#subject').val();
+                var subtotal = $('#subtotal').val();
+                var tax = $('#tax').val();
+                var cur_code = 'GBP';
+
+
+                $.ajax({
+                type: 'POST',
+                url: "{{ route('invoices.store')}}",
+                data: {
+                    user_id,
+                    due_date,
+                    subject,
+                    subtotal,
+                    tax,
+                    cur_code,
+                    items: itemList
+                },
+                success: function(data) {
+                    window.location.href = "{{ route('invoices.index') }}";
+                }
+                });
             });
         });
     </script>
 @endsection
 
-
-
-<!--                                                             <td><input type="number" name="jumlah[]" id="jumlah"></td>
-                        <td><input type="number" name="harga[]" id="harga"></td> -->
